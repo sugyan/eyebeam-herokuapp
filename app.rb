@@ -1,8 +1,9 @@
 require 'digest/sha1'
 require 'blitline'
 require 'dalli'
-require 'sinatra'
 require 'haml'
+require 'json'
+require 'sinatra'
 
 set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
   :username => ENV['MEMCACHE_USERNAME'],
@@ -17,7 +18,8 @@ end
 
 get '/image' do
   if url = params[:url]
-    blitline(url)
+    json = blitline(url)
+    haml :image, :locals => { :s3_url => json['results'][0]['images'][0]['s3_url'] }
   else
     error 400, 'Bad Request'
   end
@@ -30,7 +32,7 @@ def blitline (url)
   else
     job = Blitline::Job.new(url)
     job.application_id = ENV['BLITLINE_APPLICATION_ID']
-    function = job.add_function('resize_to_fit', { :width  => 100, :height => 100 })
+    function = job.add_function('resize_to_fit', { :width  => 384, :height => 384 })
     function.add_save('eyebeam')
     blitline = Blitline.new
     blitline.jobs << job
