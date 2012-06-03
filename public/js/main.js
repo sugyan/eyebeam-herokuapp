@@ -9,11 +9,12 @@
                 }).hide();
                 img.load(function () {
                     $('#message').remove();
-                    img.show();
+                    var paper = Raphael('image', img.width(), img.height());
+                    var image = paper.image(url, 0, 0, img.width(), img.height());
                 });
                 img.error(function () {
                     img.remove();
-                    if (++retry >= 5) {
+                    if (retry++ > 5) {
                         $('#message').text('読み込みに失敗しました。');
                     } else {
                         window.setTimeout(function () {

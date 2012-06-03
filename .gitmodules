@@ -4,3 +4,6 @@
 [submodule "deps/less"]
 	path = deps/less
 	url = git://github.com/cloudhead/less.js.git
+[submodule "deps/raphael"]
+	path = deps/raphael
+	url = git://github.com/DmitryBaranovskiy/raphael.git
