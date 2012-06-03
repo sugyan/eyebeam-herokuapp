@@ -1,0 +1,15 @@
+!!! 5
+%html
+  %head
+    %meta{:charset => "UTF-8"}
+    %title eye beam
+    %link{:rel => "stylesheet/less", :href => "/lib/bootstrap/less/bootstrap.less"}
+    %script{:type => "text/javascript", :src => "/lib/less/less.js"}
+    %link{:rel => "stylesheet", :type => "text/css", :href => "/css/style.css"}
+  %body
+    .navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          %a.brand{:href => "/"} eye beam
+    .container.main
+      != yield

@@ -2,14 +2,25 @@ require 'digest/sha1'
 require 'blitline'
 require 'dalli'
 require 'sinatra'
+require 'haml'
 
 set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
   :username => ENV['MEMCACHE_USERNAME'],
   :password => ENV['MEMCACHE_PASSWORD'],
   )
+set :haml, :format      => :html5
+set :haml, :escape_html => true
 
 get '/' do
-  blitline(params[:url])
+  haml :index
+end
+
+get '/image' do
+  if url = params[:url]
+    blitline(url)
+  else
+    error 400, 'Bad Request'
+  end
 end
 
 def blitline (url)
