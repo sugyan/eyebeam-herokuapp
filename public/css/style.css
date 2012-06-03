@@ -5,3 +5,14 @@ h1, h2 {
 .container.main {
     padding-top: 40px;
 }
+
+#image {
+    width: 384px;
+    height: 384px;
+    border: lightgray 1px solid;
+    text-align: center;
+}
+
+#image p {
+    line-height: 384px;
+}

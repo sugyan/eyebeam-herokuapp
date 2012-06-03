@@ -5,6 +5,8 @@ require 'haml'
 require 'json'
 require 'sinatra'
 
+enable :logging
+
 set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
   :username => ENV['MEMCACHE_USERNAME'],
   :password => ENV['MEMCACHE_PASSWORD'],
@@ -37,6 +39,7 @@ def blitline (url)
     blitline = Blitline.new
     blitline.jobs << job
     json = blitline.post_jobs
+    logger.info json
     settings.cache.set(sha1, json)
     return json
   end
