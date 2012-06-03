@@ -56,6 +56,7 @@ def blitline (url)
   end
 end
 
+OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
 def kaolabo (url)
   key = 'kaolabo:' + Digest::SHA1.hexdigest(url)
   if cached = settings.cache.get(key)
