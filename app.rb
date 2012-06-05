@@ -47,14 +47,15 @@ post '/upload' do
     data = img.to_blob{ self.format = 'JPG' }
     sha1 = Digest::SHA1.hexdigest(data)
     face = kaolabo_post(data, sha1)
-    unless face
+    if face
+      settings.cache.set("orig:#{ sha1 }", data)
+      draw_beam(img, face)
+      settings.cache.set("beam:#{ sha1 }", img.to_blob)
+      redirect "/result/#{ sha1 }"
+    else
       logger.info 'no faces'
+      haml :failed
     end
-
-    settings.cache.set("orig:#{ sha1 }", data)
-    draw_beam(img, face)
-    settings.cache.set("beam:#{ sha1 }", img.to_blob)
-    redirect "/result/#{ sha1 }"
   rescue
     error 400, 'Bad Request'
   end
@@ -102,7 +103,7 @@ def draw_beam (img, face)
     face['face']['x'] + face['face']['w'] / 2.0,
     face['face']['y'] + face['face']['h'] / 2.0,
   ]
-  slope = (c[1] - f[1]) / (c[0] - f[0])
+  slope = (c[0] == f[0]) ? (rand - 0.5) * 10 : (c[1] - f[1]) / (c[0] - f[0])
 
   def draw_line (img, face, slope, color, width, opacity)
     d = Magick::Draw.new
