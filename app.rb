@@ -21,18 +21,33 @@ get '/' do
   haml :index
 end
 
-post '/upload' do
-  img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit(512)
-  data = img.to_blob{ self.format = 'JPG' }
-  sha1 = Digest::SHA1.hexdigest(data)
-  face = kaolabo_post(data, sha1)
-  unless face
-    logger.info 'no faces'
+get '/beam/:sha1' do
+  sha1 = params[:sha1]
+  if beam = settings.cache.get("beam:#{ sha1 }")
+    content_type 'image/jpeg'
+    beam
+  else
+    error 404, 'Not Found'
   end
-  draw_beam(img, face)
+end
 
-  content_type 'image/jpeg'
-  img.to_blob
+post '/upload' do
+  begin
+    img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit!(512)
+    data = img.to_blob{ self.format = 'JPG' }
+    sha1 = Digest::SHA1.hexdigest(data)
+    face = kaolabo_post(data, sha1)
+    unless face
+      logger.info 'no faces'
+    end
+
+    settings.cache.set("orig:#{ sha1 }", data)
+    draw_beam(img, face)
+    settings.cache.set("beam:#{ sha1 }", img.to_blob)
+    redirect "/beam/#{ sha1 }"
+  rescue
+    error 400, 'Bad Request'
+  end
 end
 
 def kaolabo_post (data, sha1)
