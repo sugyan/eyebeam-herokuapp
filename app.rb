@@ -69,6 +69,7 @@ def kaolabo_post (data, sha1)
 end
 
 def draw_beam (img, face)
+  logger.info face
   c = [
     (face['leye']['x'] + face['reye']['x']) / 2.0,
     (face['leye']['y'] + face['reye']['y']) / 2.0,
