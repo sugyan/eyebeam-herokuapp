@@ -9,13 +9,12 @@ h2 {
     padding-top: 40px;
 }
 
-#image {
-    width: 384px;
-    height: 384px;
-    border: lightgray 1px solid;
+#result .image {
+    width: 460px;
+    height: 460px;
     text-align: center;
 }
-
-#image p {
-    line-height: 384px;
+#result .permalink {
+    margin: 20px 0;
+    text-align: center;
 }

@@ -1,0 +1,14 @@
+%h1 結果
+#result
+  .row
+    .span6
+      元画像
+      .image.orig
+        %img{:src => "/orig/#{ params[:sha1] }.jpg"}
+    .span6
+      ビーム
+      .image.beam
+        %img{:src => "/beam/#{ params[:sha1] }.jpg"}
+  .row.permalink
+    ビーム画像URL: 
+    %a{:href => "/beam/#{ params[:sha1] }.jpg"} http://#{ request.host }/beam/#{ params[:sha1] }.jpg

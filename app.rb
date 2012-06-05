@@ -21,11 +21,21 @@ get '/' do
   haml :index
 end
 
-get '/beam/:sha1' do
+get '/result/:sha1' do
   sha1 = params[:sha1]
-  if beam = settings.cache.get("beam:#{ sha1 }")
+  if settings.cache.get("orig:#{ sha1 }") && settings.cache.get("beam:#{ sha1 }")
+    haml :result
+  else
+    error 404, 'Not Found'
+  end
+end
+
+get '/:kind/:path' do
+  kind = params[:kind].match(/^(orig|beam)$/)
+  sha1 = params[:path].match(/(\w+).jpg/)
+  if kind && sha1 && (data = settings.cache.get("#{ kind }:#{ sha1[1] }"))
     content_type 'image/jpeg'
-    beam
+    data
   else
     error 404, 'Not Found'
   end
@@ -33,7 +43,7 @@ end
 
 post '/upload' do
   begin
-    img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit!(512)
+    img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit!(460)
     data = img.to_blob{ self.format = 'JPG' }
     sha1 = Digest::SHA1.hexdigest(data)
     face = kaolabo_post(data, sha1)
@@ -44,7 +54,7 @@ post '/upload' do
     settings.cache.set("orig:#{ sha1 }", data)
     draw_beam(img, face)
     settings.cache.set("beam:#{ sha1 }", img.to_blob)
-    redirect "/beam/#{ sha1 }"
+    redirect "/result/#{ sha1 }"
   rescue
     error 400, 'Bad Request'
   end
