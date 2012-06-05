@@ -47,19 +47,19 @@ def kaolabo_post (data, sha1)
     face = doc.elements['results/faces[1]/face']
     return unless face
     data = {
-      :face => {
-        :h => face.attributes['height'].to_i,
-        :w => face.attributes['width'].to_i,
-        :x => face.attributes['x'].to_i,
-        :y => face.attributes['y'].to_i,
+      'face' => {
+        'h' => face.attributes['height'].to_i,
+        'w' => face.attributes['width'].to_i,
+        'x' => face.attributes['x'].to_i,
+        'y' => face.attributes['y'].to_i,
       },
-      :leye => {
-        :x => face.elements['left-eye'].attributes['x'].to_i,
-        :y => face.elements['left-eye'].attributes['y'].to_i,
+      'leye' => {
+        'x' => face.elements['left-eye'].attributes['x'].to_i,
+        'y' => face.elements['left-eye'].attributes['y'].to_i,
       },
-      :reye => {
-        :x => face.elements['right-eye'].attributes['x'].to_i,
-        :y => face.elements['right-eye'].attributes['y'].to_i,
+      'reye' => {
+        'x' => face.elements['right-eye'].attributes['x'].to_i,
+        'y' => face.elements['right-eye'].attributes['y'].to_i,
       }
     }
     logger.info data
@@ -69,7 +69,6 @@ def kaolabo_post (data, sha1)
 end
 
 def draw_beam (img, face)
-  logger.info face
   c = [
     (face['leye']['x'] + face['reye']['x']) / 2.0,
     (face['leye']['y'] + face['reye']['y']) / 2.0,
