@@ -5,7 +5,7 @@ require 'haml'
 require 'net/https'
 require 'json'
 require 'rexml/document'
-require 'rmagick'
+require 'RMagick'
 require 'sinatra'
 
 enable :logging
