@@ -1,4 +1,4 @@
-%h2 画像URL
-%form.form-inline{:action => "/image", :method => "GET"}
-  %input.input-xxlarge{:type => "text", :name => "url"}
-  %input.btn{:type => "submit"}
+%h2 画像を選んでください
+%form.form-inline{:action => "/upload", :method => "POST", :enctype => "multipart/form-data"}
+  %input.input{:type => "file", :name => "image"}
+  %input.btn{:type => "submit", :value => "送信"}

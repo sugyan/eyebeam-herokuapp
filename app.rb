@@ -2,9 +2,10 @@ require 'digest/sha1'
 require 'blitline'
 require 'dalli'
 require 'haml'
+require 'net/https'
 require 'json'
-require 'open-uri'
 require 'rexml/document'
+require 'rmagick'
 require 'sinatra'
 
 enable :logging
@@ -20,69 +21,79 @@ get '/' do
   haml :index
 end
 
-get '/image' do
-  if url = params[:url]
-    json = blitline(url)
-    haml :image, :locals => { :s3_url => json['results'][0]['images'][0]['s3_url'] }
-  else
-    error 400, 'Bad Request'
+post '/upload' do
+  img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit(512)
+  data = img.to_blob{ self.format = 'JPG' }
+  sha1 = Digest::SHA1.hexdigest(data)
+  face = kaolabo_post(data, sha1)
+  unless face
+    logger.info 'no faces'
   end
+  draw_beam(img, face)
+
+  content_type 'image/jpeg'
+  img.to_blob
 end
 
-get '/api/face' do
-  if url = params[:url]
-    data = kaolabo(url)
-    data
-  else
-    error 400, 'Bad Request'
-  end
-end
-
-def blitline (url)
-  key = 'blitline:' + Digest::SHA1.hexdigest(url)
+def kaolabo_post (data, sha1)
+  key = "kaolabo:data:#{ sha1 }"
   if cached = settings.cache.get(key)
-    return cached
+    return JSON.parse(cached)
   else
-    job = Blitline::Job.new(url)
-    job.application_id = ENV['BLITLINE_APPLICATION_ID']
-    function = job.add_function('resize_to_fit', { :width  => 384, :height => 384 })
-    function.add_save('eyebeam')
-    blitline = Blitline.new
-    blitline.jobs << job
-    json = blitline.post_jobs
-    logger.info json
-    settings.cache.set(key, json)
-    return json
-  end
-end
-
-OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
-def kaolabo (url)
-  key = 'kaolabo:' + Digest::SHA1.hexdigest(url)
-  if cached = settings.cache.get(key)
-    return cached
-  else
-    uri = "https://kaolabo.com/api/detect?apikey=#{ ENV['KAOLABO_APIKEY'] }&url=#{ URI.encode(url) }"
-    doc = REXML::Document.new(open(uri).read)
+    https = Net::HTTP.new('kaolabo.com', 443)
+    https.use_ssl = true
+    res = https.post("/api/detect?apikey=#{ ENV['KAOLABO_APIKEY'] }", data, { 'Content-Type' => 'image/jpeg' })
+    doc = REXML::Document.new(res.body)
     face = doc.elements['results/faces[1]/face']
+    return unless face
     data = {
       :face => {
-        :height => face.attributes['height'],
-        :width  => face.attributes['width'],
-        :x      => face.attributes['x'],
-        :y      => face.attributes['y'],
+        :h => face.attributes['height'].to_i,
+        :w => face.attributes['width'].to_i,
+        :x => face.attributes['x'].to_i,
+        :y => face.attributes['y'].to_i,
       },
-      :left_eye => {
-        :x => face.elements['left-eye'].attributes['x'],
-        :y => face.elements['left-eye'].attributes['y'],
+      :leye => {
+        :x => face.elements['left-eye'].attributes['x'].to_i,
+        :y => face.elements['left-eye'].attributes['y'].to_i,
       },
-      :right_eye => {
-        :x => face.elements['right-eye'].attributes['x'],
-        :y => face.elements['right-eye'].attributes['y'],
+      :reye => {
+        :x => face.elements['right-eye'].attributes['x'].to_i,
+        :y => face.elements['right-eye'].attributes['y'].to_i,
       }
-    }.to_json
+    }
     logger.info data
-    settings.cache.set(key, data)
+    settings.cache.set(key, data.to_json)
     return data
   end
+end
+
+def draw_beam (img, face)
+  c = [
+    (face['leye']['x'] + face['reye']['x']) / 2.0,
+    (face['leye']['y'] + face['reye']['y']) / 2.0,
+  ]
+  f = [
+    face['face']['x'] + face['face']['w'] / 2.0,
+    face['face']['y'] + face['face']['h'] / 2.0,
+  ]
+  slope = (c[1] - f[1]) / (c[0] - f[0])
+
+  def draw_line (img, face, slope, color, width, opacity)
+    d = Magick::Draw.new
+    d.stroke_linecap('round')
+    d.stroke(color)
+    d.stroke_width(width)
+    d.stroke_opacity(opacity)
+    if slope >= 0
+      d.line(face['leye']['x'], face['leye']['y'], 0, face['leye']['y'] - slope * 1.1 * face['leye']['x'])
+      d.line(face['reye']['x'], face['reye']['y'], 0, face['reye']['y'] - slope / 1.1 * face['reye']['x'])
+    else
+      d.line(face['leye']['x'], face['leye']['y'], img.columns, face['leye']['y'].to_f + slope / 1.1 * (img.columns - face['leye']['x'].to_f))
+      d.line(face['reye']['x'], face['reye']['y'], img.columns, face['reye']['y'].to_f + slope * 1.1 * (img.columns - face['reye']['x'].to_f))
+    end
+    d.draw(img)
+  end
+  draw_line(img, face, slope, 'blue',  5, 0.3)
+  draw_line(img, face, slope, 'white', 3, 0.7)
 end

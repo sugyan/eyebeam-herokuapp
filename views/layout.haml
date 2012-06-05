@@ -2,7 +2,7 @@
 %html
   %head
     %meta{:charset => "UTF-8"}
-    %title eye beam
+    %title 目からビーム画像ジェネレーター
     %script{:type => "text/javascript", :src => "http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"}
     %link{:rel => "stylesheet/less", :href => "/lib/bootstrap/less/bootstrap.less"}
     %script{:type => "text/javascript", :src => "/lib/raphael/raphael.js"}
@@ -13,12 +13,12 @@
     .navbar.navbar-fixed-top
       .navbar-inner
         .container
-          %a.brand{:href => "/"} eye beam
+          %a.brand{:href => "/"} 目からビーム画像ジェネレーター
     .container.main
       != yield
       %hr
       %footer
-        .kaolabo
+        .kaolabo.pull-left
           %a{:href => "http://kaolabo.com/webapi"}
             %img{:src => "http://kaolabo.com/wp-content/uploads/images/banner_125_50.gif"}
         .pull-right
