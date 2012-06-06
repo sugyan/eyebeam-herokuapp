@@ -41,9 +41,9 @@ get '/:kind/:path' do
   end
 end
 
-post '/upload' do
+post '/submit' do
   begin
-    img = Magick::ImageList.new(params[:image][:tempfile].path).resize_to_fit!(460)
+    img  = Magick::ImageList.new(params[:url] || params[:image][:tempfile].path).resize_to_fit(460)
     data = img.to_blob{ self.format = 'JPG' }
     sha1 = Digest::SHA1.hexdigest(data)
     face = kaolabo_post(data, sha1)
