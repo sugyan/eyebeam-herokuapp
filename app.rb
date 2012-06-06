@@ -56,7 +56,8 @@ post '/upload' do
       logger.info 'no faces'
       haml :failed
     end
-  rescue
+  rescue => e
+    logger.warn e
     error 400, 'Bad Request'
   end
 end
@@ -105,9 +106,9 @@ def draw_beam (img, face)
   ]
   slope = (c[0] == f[0]) ? (rand - 0.5) * 10 : (c[1] - f[1]) / (c[0] - f[0])
 
-  def draw_line (img, face, slope, color, width, opacity)
-    d = Magick::Draw.new
-    d.stroke_linecap('round')
+  d = Magick::Draw.new
+  d.stroke_linecap('round')
+  draw_line = Proc.new { |color, width, opacity|
     d.stroke(color)
     d.stroke_width(width)
     d.stroke_opacity(opacity)
@@ -118,8 +119,8 @@ def draw_beam (img, face)
       d.line(face['leye']['x'], face['leye']['y'], img.columns, face['leye']['y'].to_f + slope / 1.1 * (img.columns - face['leye']['x'].to_f))
       d.line(face['reye']['x'], face['reye']['y'], img.columns, face['reye']['y'].to_f + slope * 1.1 * (img.columns - face['reye']['x'].to_f))
     end
-    d.draw(img)
-  end
-  draw_line(img, face, slope, 'blue',  5, 0.3)
-  draw_line(img, face, slope, 'white', 3, 0.7)
+  }
+  draw_line.call('blue',  5, 0.3)
+  draw_line.call('white', 3, 0.7)
+  d.draw(img)
 end
