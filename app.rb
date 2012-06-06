@@ -106,6 +106,7 @@ def kaolabo_post (data, sha1)
     https = Net::HTTP.new('kaolabo.com', 443)
     https.use_ssl = true
     res = https.post("/api/detect?apikey=#{ ENV['KAOLABO_APIKEY'] }", data, { 'Content-Type' => 'image/jpeg' })
+    logger.info res.body
     doc = REXML::Document.new(res.body)
     face = doc.elements['results/faces[1]/face']
     return unless face
