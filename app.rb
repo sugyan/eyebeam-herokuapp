@@ -1,5 +1,4 @@
 require 'digest/sha1'
-require 'blitline'
 require 'dalli'
 require 'haml'
 require 'net/https'
