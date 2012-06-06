@@ -4,6 +4,9 @@ h1 {
 h2 {
     padding: 10px 0;
 }
+h3 {
+    padding: 5px 0;
+}
 
 .container.main {
     padding-top: 40px;
@@ -17,4 +20,8 @@ h2 {
 #result .permalink {
     margin: 20px 0;
     text-align: center;
+}
+
+footer .social-buttons .pull-left {
+    margin-right: 10px;
 }
