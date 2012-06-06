@@ -4,11 +4,17 @@ require 'dalli'
 require 'haml'
 require 'net/https'
 require 'json'
+require 'omniauth-twitter'
 require 'rexml/document'
 require 'RMagick'
 require 'sinatra'
 
+use OmniAuth::Builder do
+  provider :twitter, ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
+end
+
 enable :logging
+enable :sessions
 
 set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
   :username => ENV['MEMCACHE_USERNAME'],
@@ -19,6 +25,10 @@ set :haml, :escape_html => true
 
 get '/' do
   haml :index
+end
+
+get '/failed' do
+  haml :failed
 end
 
 get '/result/:sha1' do
@@ -41,24 +51,50 @@ get '/:kind/:path' do
   end
 end
 
-post '/submit' do
+get '/auth/twitter/callback' do
+  auth = request.env['omniauth.auth']
+  logger.info auth.info
   begin
-    img  = Magick::ImageList.new(params[:url] || params[:image][:tempfile].path).resize_to_fit(460)
-    data = img.to_blob{ self.format = 'JPG' }
-    sha1 = Digest::SHA1.hexdigest(data)
-    face = kaolabo_post(data, sha1)
-    if face
-      settings.cache.set("orig:#{ sha1 }", data)
-      draw_beam(img, face)
-      settings.cache.set("beam:#{ sha1 }", img.to_blob)
-      redirect "/result/#{ sha1 }"
-    else
-      logger.info 'no faces'
-      haml :failed
-    end
+    submit(auth.info.image)
   rescue => e
-    logger.warn e
+    logger.warn e.message
     error 400, 'Bad Request'
+  end
+end
+
+post '/url' do
+  begin
+    raise 'no url' if params[:url].length < 1
+    submit(params[:url])
+  rescue => e
+    logger.warn e.message
+    error 400, 'Bad Request'
+  end
+end
+
+post '/upload' do
+  begin
+    raise 'no file' unless params[:image]
+    submit(params[:image][:tempfile].path)
+  rescue => e
+    logger.warn e.message
+    error 400, 'Bad Request'
+  end
+end
+
+def submit (path)
+  img  = Magick::ImageList.new(path).resize_to_fit(460)
+  data = img.to_blob{ self.format = 'JPG' }
+  sha1 = Digest::SHA1.hexdigest(data)
+  face = kaolabo_post(data, sha1)
+  if face
+    settings.cache.set("orig:#{ sha1 }", data)
+    draw_beam(img, face)
+    settings.cache.set("beam:#{ sha1 }", img.to_blob)
+    redirect "/result/#{ sha1 }"
+  else
+    logger.info 'no faces'
+    redirect '/failed'
   end
 end
 

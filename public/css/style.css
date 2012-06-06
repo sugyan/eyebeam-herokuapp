@@ -12,6 +12,10 @@ h3 {
     padding-top: 40px;
 }
 
+.submit_form {
+    margin-left: 20px;
+}
+
 #result .image {
     width: 460px;
     height: 460px;

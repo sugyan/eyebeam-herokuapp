@@ -8,11 +8,17 @@
   顔を検出できなかったら何もしません。
 %h2 作る
 %h3 ・画像URLを指定して作る
-%form.form-inline{:action => "/submit", :method => "POST"}
-  %input.input-xxlarge{:type => "text", :name => "url", :placeholder => "画像のURLを入力してください"}
-  %input.btn{:type => "submit", :value => "決定"}
-%h3 ・ファイルをアップロードして作る
-%p 画像を選んでください。
-%form.form-inline{:action => "/submit", :method => "POST", :enctype => "multipart/form-data"}
-  %input.input{:type => "file", :name => "image"}
-  %input.btn{:type => "submit", :value => "送信"}
+.submit_form
+  %form.form-inline{:action => "/url", :method => "POST"}
+    %input.input-xxlarge{:type => "text", :name => "url", :placeholder => "画像のURLを入力してください"}
+    %input.btn{:type => "submit", :value => "決定"}
+%h3 ・画像ファイルをアップロードして作る
+.submit_form
+  %p 画像を選んでください。
+  %form.form-inline{:action => "/upload", :method => "POST", :enctype => "multipart/form-data"}
+    %input.input{:type => "file", :name => "image"}
+    %input.btn{:type => "submit", :value => "送信"}
+%h3 ・Twitterアイコンから作る
+.submit_form
+  %a{:href => "/auth/twitter"}
+    %img{:src => "/img/sign-in-with-twitter-l.png"}
