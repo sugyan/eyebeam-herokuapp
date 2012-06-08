@@ -39,6 +39,10 @@ get '/result/:sha1' do
   end
 end
 
+get '/custom/sample' do
+  haml :custom
+end
+
 get '/:kind/:path' do
   kind = params[:kind].match(/^(orig|beam)$/)
   sha1 = params[:path].match(/(\w+).jpg/)
