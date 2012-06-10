@@ -5,7 +5,7 @@ require 'net/https'
 require 'json'
 require 'omniauth-twitter'
 require 'rexml/document'
-require 'RMagick'
+require 'rmagick'
 require 'sinatra'
 
 use OmniAuth::Builder do
