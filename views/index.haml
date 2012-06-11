@@ -19,7 +19,13 @@
   %form.form-inline{:action => "/upload", :method => "POST", :enctype => "multipart/form-data"}
     %input.input{:type => "file", :name => "image"}
     %input.btn{:type => "submit", :value => "送信"}
-%h3 ・Twitterアイコンから作る
+%h3 ・自分のアイコンから作る
 .submit_form.well
-  %a{:href => "/auth/twitter"}
-    %img{:src => "/img/sign-in-with-twitter-l.png"}
+  .authbutton
+    %a{:href => "/auth/twitter"}
+      %img{:src => "/lib/authbuttons/img/twitter.png"}
+      Twitter
+  .authbutton
+    %a{:href => "/auth/facebook"}
+      %img{:src => "/lib/authbuttons/img/facebook.png"}
+      Facebook

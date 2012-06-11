@@ -4,13 +4,14 @@ require 'face'
 require 'haml'
 require 'json'
 require 'omniauth-twitter'
+require 'omniauth-facebook'
 require 'sinatra'
-require 'stringio'
 require 'tempfile'
 require 'RMagick'
 
 use OmniAuth::Builder do
-  provider :twitter, ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
+  provider :twitter,  ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
+  provider :facebook, ENV['FACEBOOK_APP_ID'],      ENV['FACEBOOK_APP_SECRET']
 end
 
 enable :logging
@@ -56,6 +57,17 @@ get '/auth/twitter/callback' do
   logger.info auth.info
   begin
     submit(auth.info.image)
+  rescue => e
+    logger.warn e.message
+    error 400, 'Bad Request'
+  end
+end
+
+get '/auth/facebook/callback' do
+  auth = request.env['omniauth.auth']
+  logger.info auth.info
+  begin
+    submit(auth.info.image.gsub(/square/, 'large'))
   rescue => e
     logger.warn e.message
     error 400, 'Bad Request'
