@@ -1,12 +1,13 @@
 require 'digest/sha1'
 require 'dalli'
+require 'face'
 require 'haml'
-require 'net/https'
 require 'json'
 require 'omniauth-twitter'
-require 'rexml/document'
-require 'RMagick'
 require 'sinatra'
+require 'stringio'
+require 'tempfile'
+require 'RMagick'
 
 use OmniAuth::Builder do
   provider :twitter, ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
@@ -83,13 +84,23 @@ end
 
 def submit (path)
   img  = Magick::ImageList.new(path).resize_to_fit(460)
-  data = img.to_blob{ self.format = 'JPG' }
-  sha1 = Digest::SHA1.hexdigest(data)
-  face = kaolabo_post(data, sha1)
-  if face
-    settings.cache.set("orig:#{ sha1 }", data)
-    draw_beam(img, face)
-    settings.cache.set("beam:#{ sha1 }", img.to_blob)
+  blob = img.to_blob{ self.format = 'JPG' }
+  sha1 = Digest::SHA1.hexdigest(blob)
+  if json = settings.cache.get("face:#{ sha1 }")
+    data = JSON.parse(json)
+  else
+    face = Face.get_client(:api_key => ENV['FACECOM_API_KEY'], :api_secret => ENV['FACECOM_API_SECRET'])
+    file = Tempfile.new(sha1)
+    file.write(blob)
+    data = face.faces_detect(:file => File.new(file.path, 'rb'))
+    settings.cache.set("face:#{ sha1 }", data.to_json)
+  end
+  logger.info data['usage']['remaining']
+  tags = data['photos'][0]['tags']
+  if tags.length > 0
+    settings.cache.set("orig:#{ sha1 }", blob)
+    draw_beam(img, tags)
+    settings.cache.set("beam:#{ sha1 }", img.to_blob{ self.format = 'JPG' })
     redirect "/result/#{ sha1 }"
   else
     logger.info 'no faces'
@@ -97,66 +108,37 @@ def submit (path)
   end
 end
 
-def kaolabo_post (data, sha1)
-  key = "kaolabo:data:#{ sha1 }"
-  if cached = settings.cache.get(key)
-    return JSON.parse(cached)
-  else
-    https = Net::HTTP.new('kaolabo.com', 443)
-    https.use_ssl = true
-    res = https.post("/api/detect?apikey=#{ ENV['KAOLABO_APIKEY'] }", data, { 'Content-Type' => 'image/jpeg' })
-    logger.info res.body
-    doc = REXML::Document.new(res.body)
-    face = doc.elements['results/faces[1]/face']
-    return unless face
-    data = {
-      'face' => {
-        'h' => face.attributes['height'].to_i,
-        'w' => face.attributes['width'].to_i,
-        'x' => face.attributes['x'].to_i,
-        'y' => face.attributes['y'].to_i,
-      },
-      'leye' => {
-        'x' => face.elements['left-eye'].attributes['x'].to_i,
-        'y' => face.elements['left-eye'].attributes['y'].to_i,
-      },
-      'reye' => {
-        'x' => face.elements['right-eye'].attributes['x'].to_i,
-        'y' => face.elements['right-eye'].attributes['y'].to_i,
-      }
-    }
-    logger.info data
-    settings.cache.set(key, data.to_json)
-    return data
-  end
-end
-
-def draw_beam (img, face)
-  c = [
-    (face['leye']['x'] + face['reye']['x']) / 2.0,
-    (face['leye']['y'] + face['reye']['y']) / 2.0,
-  ]
-  f = [
-    face['face']['x'] + face['face']['w'] / 2.0,
-    face['face']['y'] + face['face']['h'] / 2.0,
-  ]
-  slope = (c[0] == f[0]) ? (rand - 0.5) * 10 : (c[1] - f[1]) / (c[0] - f[0])
-
+def draw_beam (img, tags)
   d = Magick::Draw.new
-  d.stroke_linecap('round')
-  draw_line = Proc.new { |color, width, opacity|
-    d.stroke(color)
-    d.stroke_width(width)
-    d.stroke_opacity(opacity)
-    if slope >= 0
-      d.line(face['leye']['x'], face['leye']['y'], 0, face['leye']['y'] - slope * 1.1 * face['leye']['x'])
-      d.line(face['reye']['x'], face['reye']['y'], 0, face['reye']['y'] - slope / 1.1 * face['reye']['x'])
-    else
-      d.line(face['leye']['x'], face['leye']['y'], img.columns, face['leye']['y'].to_f + slope / 1.1 * (img.columns - face['leye']['x'].to_f))
-      d.line(face['reye']['x'], face['reye']['y'], img.columns, face['reye']['y'].to_f + slope * 1.1 * (img.columns - face['reye']['x'].to_f))
-    end
-  }
-  draw_line.call('blue',  5, 0.3)
-  draw_line.call('white', 3, 0.7)
-  d.draw(img)
+  tags.reverse.each do |tag|
+    return unless tag['eye_left'] && tag['eye_right']
+    logger.info tag
+    reye = [tag['eye_right']['x'] * img.columns / 100.0, tag['eye_right']['y'] * img.rows / 100.0]
+    leye = [tag['eye_left']['x']  * img.columns / 100.0, tag['eye_left']['y']  * img.rows / 100.0]
+    line = Proc.new{ |eye, angle, pitch|
+      edge = Proc.new{ |s|
+        if s >= 0
+          [0, eye[1] - (pitch >= 0 ? 1 : -1) * s * eye[0]]
+        else
+          [img.columns, eye[1] + (pitch >= 0 ? 1 : -1) * s * (img.columns - eye[0])]
+        end
+      }
+      slope0 = Math::tan((90 - angle + 3) / 180 * Math::PI)
+      slope1 = Math::tan((90 - angle - 3) / 180 * Math::PI)
+      edge0 = edge.call(slope0)
+      edge1 = edge.call(slope1)
+      d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
+    }
+    cangle = tag['roll'] + (tag['pitch'] > 0 ? 1 : -1) * tag['yaw']
+    langle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
+    rangle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
+    d.stroke(['red', 'green', 'yellow', 'pink', 'purple'][rand 5])
+    d.stroke_width(5)
+    d.stroke_opacity(0.3)
+    d.fill('white')
+    d.fill_opacity(0.7)
+    line.call(leye, langle, tag['pitch'])
+    line.call(reye, rangle, tag['pitch'])
+    d.draw(img)
+  end
 end
