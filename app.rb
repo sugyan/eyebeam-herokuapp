@@ -24,6 +24,14 @@ set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
 set :haml, :format      => :html5
 set :haml, :escape_html => true
 
+error 400 do
+  haml :error, :locals => { :code => 400, :message => 'Bad Request' }
+end
+
+error 404 do
+  haml :error, :locals => { :code => 404, :message => 'Not Found' }
+end
+
 get '/' do
   haml :index
 end
