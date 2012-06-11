@@ -152,7 +152,7 @@ def draw_beam (img, tags)
     cangle = tag['roll'] + (tag['pitch'] > 0 ? 1 : -1) * tag['yaw']
     langle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
     rangle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
-    d.stroke(['red', 'green', 'yellow', 'pink', 'purple'][rand 5])
+    d.stroke(['#FF0000', '#0000FF', '#FFFF00', '#FF00FF', '#800080'][rand 5])
     d.stroke_width(5)
     d.stroke_opacity(0.3)
     d.fill('white')
