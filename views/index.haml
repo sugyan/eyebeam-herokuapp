@@ -1,26 +1,25 @@
-%h1 目からビーム画像ジェネレータ
+%h1 目からビーム画像ジェネレーター
 
 %h2 説明
 %p
-  %a{:href => "http://kaolabo.com/webapi", :target => "_blank"} 顔ラボ 顔検出WebAPI
+  %a{:href => "http://developers.face.com/", :target => "_blank"} face.com API (beta)
   を使って画像から顔、目を検出し、自動でビームを合成した画像を生成します。
 %p
   顔を検出できなかったら何もしません。
-  %br
-  %span{:style => "color: red; font-weight: bold"} ※現在、APIの利用回数制限により顔認識が成功しない状態のようです。すみません。アップデートをお待ちください。
 %h2 作る
+以下のいずれかの方法で画像を指定できます。
 %h3 ・画像URLを指定して作る
-.submit_form
+.submit_form.well
   %form.form-inline{:action => "/url", :method => "POST"}
     %input.input-xxlarge{:type => "text", :name => "url", :placeholder => "画像のURLを入力してください"}
     %input.btn{:type => "submit", :value => "決定"}
 %h3 ・画像ファイルをアップロードして作る
-.submit_form
+.submit_form.well
   %p 画像を選んでください。
   %form.form-inline{:action => "/upload", :method => "POST", :enctype => "multipart/form-data"}
     %input.input{:type => "file", :name => "image"}
     %input.btn{:type => "submit", :value => "送信"}
 %h3 ・Twitterアイコンから作る
-.submit_form
+.submit_form.well
   %a{:href => "/auth/twitter"}
     %img{:src => "/img/sign-in-with-twitter-l.png"}
