@@ -6,7 +6,7 @@
   を使って画像から顔、目を検出し、自動でビームを合成した画像を生成します。
 %p
   %img{:src => "/img/sample_orig.jpg"}
-  %span ->
+  %i.icon-arrow-right
   %img{:src => "/img/sample_beam.jpg"}
 %p
   顔を検出できなかったら何もしません。
@@ -37,4 +37,5 @@
 .row
   - recents.compact.each do |sha1|
     .span3
-      %img.recent{:src => "/beam/#{ sha1 }.jpg"}
+      %a{:href => "/result/#{ sha1 }"}
+        %img.recent{:src => "/beam/#{ sha1 }.jpg"}
