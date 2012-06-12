@@ -33,8 +33,8 @@ error 404 do
 end
 
 get '/' do
-  recents = 0.upto(3).map do |i|
-    if sha1 = settings.cache.get("recent#{ i }")
+  recents = 1.upto(6).map do |i|
+    if sha1 = settings.cache.get("recent#{ i - 1 }")
       sha1 if settings.cache.get("beam:#{ sha1 }")
     end
   end
@@ -126,7 +126,10 @@ def submit (path)
     settings.cache.set("orig:#{ sha1 }", blob)
     draw_beam(img, tags)
     settings.cache.set("beam:#{ sha1 }", img.to_blob{ self.format = 'JPG' })
-    settings.cache.set("recent#{ rand 4 }", sha1)
+    5.downto(1).each do |i|
+      settings.cache.set("recent#{ i + 1 }", settings.cache.get("recent#{ i }"))
+    end
+    settings.cache.set("recent1", sha1)
     redirect "/result/#{ sha1 }"
   else
     logger.info 'no faces'

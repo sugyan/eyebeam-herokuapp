@@ -36,6 +36,6 @@
 %h2 最近作られた画像
 .row
   - recents.compact.each do |sha1|
-    .span3
+    .span2.recent
       %a{:href => "/result/#{ sha1 }"}
-        %img.recent{:src => "/beam/#{ sha1 }.jpg"}
+        %img{:src => "/beam/#{ sha1 }.jpg"}

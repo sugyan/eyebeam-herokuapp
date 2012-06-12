@@ -16,9 +16,12 @@ h3 {
     margin-left: 20px;
 }
 
-img.recent {
-    max-width: 220px;
-    max-height: 220px;
+.recent {
+    text-align: center;
+}
+.recent img {
+    max-width: 140px;
+    max-height: 140px;
 }
 
 #result .image {
