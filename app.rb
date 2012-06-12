@@ -138,10 +138,10 @@ def submit (path)
 end
 
 def draw_beam (img, tags)
-  d = Magick::Draw.new
   tags.reverse.each do |tag|
     return unless tag['eye_left'] && tag['eye_right']
     logger.info tag
+    d = Magick::Draw.new
     reye = [tag['eye_right']['x'] * img.columns / 100.0, tag['eye_right']['y'] * img.rows / 100.0]
     leye = [tag['eye_left']['x']  * img.columns / 100.0, tag['eye_left']['y']  * img.rows / 100.0]
     line = Proc.new{ |eye, angle, pitch|
@@ -152,8 +152,8 @@ def draw_beam (img, tags)
           [img.columns, eye[1] + (pitch >= 0 ? 1 : -1) * s * (img.columns - eye[0])]
         end
       }
-      slope0 = Math::tan((90 - angle + 3) / 180 * Math::PI)
-      slope1 = Math::tan((90 - angle - 3) / 180 * Math::PI)
+      slope0 = Math::tan((90 - angle + 2.5) / 180 * Math::PI)
+      slope1 = Math::tan((90 - angle - 2.5) / 180 * Math::PI)
       edge0 = edge.call(slope0)
       edge1 = edge.call(slope1)
       d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
@@ -161,11 +161,20 @@ def draw_beam (img, tags)
     cangle = tag['roll'] + (tag['pitch'] > 0 ? 1 : -1) * tag['yaw']
     langle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
     rangle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
+    width = 1 + (tag['width'] + tag['height']) / 20.0
+    # color
     d.stroke(['#FF0000', '#00FF00', '#FFFF00', '#FF00FF', '#800080'][rand 5])
-    d.stroke_width(5)
-    d.stroke_opacity(0.3)
+    # light source
+    d.stroke_width(width - 1)
+    d.stroke_opacity(0.1)
     d.fill('white')
-    d.fill_opacity(0.7)
+    d.fill_opacity(0.2)
+    d.ellipse(leye[0], leye[1], width, width, 0, 360)
+    d.ellipse(reye[0], reye[1], width, width, 0, 360)
+    # beam
+    d.stroke_width(width + 2)
+    d.stroke_opacity(0.4)
+    d.fill_opacity(0.6)
     line.call(leye, langle, tag['pitch'])
     line.call(reye, rangle, tag['pitch'])
     d.draw(img)
