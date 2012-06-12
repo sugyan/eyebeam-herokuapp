@@ -38,7 +38,6 @@ get '/' do
       sha1 if settings.cache.get("beam:#{ sha1 }")
     end
   end
-  logger.info recents
   haml :index, :locals => { :recents => recents }
 end
 
