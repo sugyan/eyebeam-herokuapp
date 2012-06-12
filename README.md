@@ -10,6 +10,9 @@
 
     $ heroku apps:create --stack cedar [NAME]
     $ heroku addons:add memcache
-    $ heroku config:add KAOLABO_APIKEY=********************************
     $ heroku config:add TWITTER_CONSUMER_KEY=*********************
     $ heroku config:add TWITTER_CONSUMER_SECRET=****************************************
+    $ heroku config:add FACEBOOK_APP_ID=***************
+    $ heroku config:add FACEBOOK_APP_SECRET=********************************
+    $ heroku config:add FACECOM_API_KEY=********************************
+    $ heroku config:add FACECOM_API_SECRET=********************************
