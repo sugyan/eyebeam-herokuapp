@@ -33,3 +33,8 @@
     %a{:href => "/auth/facebook"}
       %img{:src => "/lib/authbuttons/img/facebook.png"}
       Facebook
+%h2 最近作られた画像
+.row
+  - recents.compact.each do |sha1|
+    .span3
+      %img.recent{:src => "/beam/#{ sha1 }.jpg"}

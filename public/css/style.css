@@ -16,6 +16,11 @@ h3 {
     margin-left: 20px;
 }
 
+img.recent {
+    max-width: 220px;
+    max-height: 220px;
+}
+
 #result .image {
     width: 460px;
     height: 460px;
@@ -28,4 +33,5 @@ h3 {
 
 footer .social-buttons .pull-left {
     margin-right: 10px;
+    height: 40px;
 }
