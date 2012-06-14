@@ -8,6 +8,7 @@ require 'omniauth-facebook'
 require 'sinatra'
 require 'tempfile'
 require 'RMagick'
+include Math
 
 use OmniAuth::Builder do
   provider :twitter,  ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
@@ -142,24 +143,23 @@ def draw_beam (img, tags)
   tags.reverse.each do |tag|
     next unless tag['eye_left'] && tag['eye_right']
     success = true
-    logger.info tag
+    logger.info :left => tag['eye_left'], :right => tag['eye_right']
+
     d = Magick::Draw.new
     reye = [tag['eye_right']['x'] * img.columns / 100.0, tag['eye_right']['y'] * img.rows / 100.0]
     leye = [tag['eye_left']['x']  * img.columns / 100.0, tag['eye_left']['y']  * img.rows / 100.0]
-    polygon = Proc.new{ |eye, angle, updown|
-      puts "angle: #{ angle }"
-      puts "roll: #{ tag['roll'] }"
+    polygon = Proc.new{ |eye, angle, openness|
+      logger.info "angle: #{ angle }"
       edge = Proc.new{ |a|
-        s = updown * Math::tan(a / 180 * Math::PI)
-        puts "s: #{ s }, a: #{ a }"
-        if a.abs - 90 >= 0
-          [0,           eye[1] - s * eye[0]]
+        s = Math::tan(a / 180 * Math::PI)
+        if a.abs >= 90
+          [0,           eye[1] + s * eye[0]]
         else
-          [img.columns, eye[1] + s * (img.columns - eye[0])]
+          [img.columns, eye[1] - s * (img.columns - eye[0])]
         end
       }
-      edge0 = edge.call(angle + 2.5)
-      edge1 = edge.call(angle - 2.5)
+      edge0 = edge.call(angle + 10 * openness)
+      edge1 = edge.call(angle - 10 * openness)
       d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
     }
     width = 1 + (tag['width'] + tag['height']) / 20.0
@@ -178,13 +178,21 @@ def draw_beam (img, tags)
     d.fill_opacity(0.6)
 
     # FIXME
-    updown = tag['pitch'] > 0 ? 1 : -1
-    cangle = updown * 90 - tag['roll'] + tag['yaw']
-    puts "cangle: #{ cangle }"
-    langle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
-    rangle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
-    polygon.call(leye, langle, updown)
-    polygon.call(reye, rangle, updown)
+    p = tag['pitch'] * PI / 180
+    r = tag['roll']  * PI / 180
+    y = tag['yaw']   * PI / 180
+    logger.info "roll : #{ tag['roll']  } (#{ r })"
+    logger.info "pitch: #{ tag['pitch'] } (#{ p })"
+    logger.info "yaw  : #{ tag['yaw']   } (#{ y })"
+    c = (p >= 0 ? 90 : -90) + (atan2(sin(p), sin(y / 3)) / PI * 180 + (p >= 0 ? -90 : 90)) / 3
+    cangle = c - tag['roll']
+    openness = (1 - sin(p.abs)) ** 3 * (1 - sin(y.abs)) ** 3
+    logger.info "cangle: #{ cangle }"
+    logger.info "open  : #{ openness }"
+    langle = cangle + (p >= 0 ? 1 : -1) * 60 * openness
+    rangle = cangle - (p >= 0 ? 1 : -1) * 60 * openness
+    polygon.call(leye, langle, openness)
+    polygon.call(reye, rangle, openness)
     d.draw(img)
   end
   return success
