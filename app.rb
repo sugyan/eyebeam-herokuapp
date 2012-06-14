@@ -124,43 +124,44 @@ def submit (path)
   tags = data['photos'][0]['tags']
   if tags.length > 0
     settings.cache.set("orig:#{ sha1 }", blob)
-    draw_beam(img, tags)
-    settings.cache.set("beam:#{ sha1 }", img.to_blob{ self.format = 'JPG' })
-    5.downto(1).each do |i|
-      settings.cache.set("recent#{ i }", settings.cache.get("recent#{ i - 1 }"))
+    if draw_beam(img, tags)
+      settings.cache.set("beam:#{ sha1 }", img.to_blob{ self.format = 'JPG' })
+      5.downto(1).each do |i|
+        settings.cache.set("recent#{ i }", settings.cache.get("recent#{ i - 1 }"))
+      end
+      settings.cache.set("recent0", sha1)
+      redirect "/result/#{ sha1 }"
     end
-    settings.cache.set("recent0", sha1)
-    redirect "/result/#{ sha1 }"
-  else
-    logger.info 'no faces'
-    redirect '/failed'
   end
+  logger.info 'no faces'
+  redirect '/failed'
 end
 
 def draw_beam (img, tags)
+  success = false
   tags.reverse.each do |tag|
-    return unless tag['eye_left'] && tag['eye_right']
+    next unless tag['eye_left'] && tag['eye_right']
+    success = true
     logger.info tag
     d = Magick::Draw.new
     reye = [tag['eye_right']['x'] * img.columns / 100.0, tag['eye_right']['y'] * img.rows / 100.0]
     leye = [tag['eye_left']['x']  * img.columns / 100.0, tag['eye_left']['y']  * img.rows / 100.0]
-    line = Proc.new{ |eye, angle, pitch|
-      edge = Proc.new{ |s|
-        if s >= 0
-          [0, eye[1] - (pitch >= 0 ? 1 : -1) * s * eye[0]]
+    polygon = Proc.new{ |eye, angle, updown|
+      puts "angle: #{ angle }"
+      puts "roll: #{ tag['roll'] }"
+      edge = Proc.new{ |a|
+        s = updown * Math::tan(a / 180 * Math::PI)
+        puts "s: #{ s }, a: #{ a }"
+        if a.abs - 90 >= 0
+          [0,           eye[1] - s * eye[0]]
         else
-          [img.columns, eye[1] + (pitch >= 0 ? 1 : -1) * s * (img.columns - eye[0])]
+          [img.columns, eye[1] + s * (img.columns - eye[0])]
         end
       }
-      slope0 = Math::tan((90 - angle + 2.5) / 180 * Math::PI)
-      slope1 = Math::tan((90 - angle - 2.5) / 180 * Math::PI)
-      edge0 = edge.call(slope0)
-      edge1 = edge.call(slope1)
+      edge0 = edge.call(angle + 2.5)
+      edge1 = edge.call(angle - 2.5)
       d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
     }
-    cangle = tag['roll'] + (tag['pitch'] > 0 ? 1 : -1) * tag['yaw']
-    langle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
-    rangle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
     width = 1 + (tag['width'] + tag['height']) / 20.0
     # color
     d.stroke(['#FF0000', '#00FF00', '#FFFF00', '#FF00FF', '#800080'][rand 5])
@@ -175,8 +176,16 @@ def draw_beam (img, tags)
     d.stroke_width(width + 2)
     d.stroke_opacity(0.4)
     d.fill_opacity(0.6)
-    line.call(leye, langle, tag['pitch'])
-    line.call(reye, rangle, tag['pitch'])
+
+    # FIXME
+    updown = tag['pitch'] > 0 ? 1 : -1
+    cangle = updown * 90 - tag['roll'] + tag['yaw']
+    puts "cangle: #{ cangle }"
+    langle = cangle - 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
+    rangle = cangle + 30 * (1 - tag['pitch'].abs / 90.0) * (1 - tag['yaw'].abs / 90.0)
+    polygon.call(leye, langle, updown)
+    polygon.call(reye, rangle, updown)
     d.draw(img)
   end
+  return success
 end
