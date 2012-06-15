@@ -172,7 +172,7 @@ def draw_beam (img, tags)
         edge0 = edge.call(angle + (10 - i * 1.5) * openness)
         edge1 = edge.call(angle - (10 - i * 1.5) * openness)
         d.fill(color[i])
-        d.fill_opacity((i + 1) * 0.1)
+        d.fill_opacity(0.1 + i * 0.08)
         d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
       end
     }
