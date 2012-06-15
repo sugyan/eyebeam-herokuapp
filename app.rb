@@ -148,6 +148,13 @@ def draw_beam (img, tags)
     d = Magick::Draw.new
     reye = [tag['eye_right']['x'] * img.columns / 100.0, tag['eye_right']['y'] * img.rows / 100.0]
     leye = [tag['eye_left']['x']  * img.columns / 100.0, tag['eye_left']['y']  * img.rows / 100.0]
+    color = [
+      ['#FF0000', '#FF4040', '#FF8080', '#FFC0C0', '#FFFFFF'],
+      ['#00FF00', '#40FF40', '#80FF80', '#C0FFC0', '#FFFFFF'],
+      ['#FFFF00', '#FFFF40', '#FFFF80', '#FFFFC0', '#FFFFFF'],
+      ['#FF00FF', '#FF40FF', '#FF80FF', '#FFC0FF', '#FFFFFF'],
+      ['#800080', '#A040A0', '#C080C0', '#E0C0E0', '#FFFFFF'],
+    ][rand 5]
     polygon = Proc.new{ |eye, angle, openness|
       logger.info "angle: #{ angle }"
       edge = Proc.new{ |a|
@@ -158,13 +165,19 @@ def draw_beam (img, tags)
           [img.columns, eye[1] - s * (img.columns - eye[0])]
         end
       }
-      edge0 = edge.call(angle + 10 * openness)
-      edge1 = edge.call(angle - 10 * openness)
-      d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
+      # beam
+      d.stroke_width(0)
+      d.stroke_opacity(0)
+      0.upto(4).each do |i|
+        edge0 = edge.call(angle + (10 - i * 1.5) * openness)
+        edge1 = edge.call(angle - (10 - i * 1.5) * openness)
+        d.fill(color[i])
+        d.fill_opacity((i + 1) * 0.1)
+        d.polygon(eye[0], eye[1], edge0[0], edge0[1], edge1[0], edge1[1])
+      end
     }
     width = 1 + (tag['width'] + tag['height']) / 20.0
-    # color
-    d.stroke(['#FF0000', '#00FF00', '#FFFF00', '#FF00FF', '#800080'][rand 5])
+    d.stroke(color[0])
     # light source
     d.stroke_width(width - 1)
     d.stroke_opacity(0.1)
@@ -172,10 +185,6 @@ def draw_beam (img, tags)
     d.fill_opacity(0.2)
     d.ellipse(leye[0], leye[1], width, width, 0, 360)
     d.ellipse(reye[0], reye[1], width, width, 0, 360)
-    # beam
-    d.stroke_width(width + 2)
-    d.stroke_opacity(0.4)
-    d.fill_opacity(0.6)
 
     # FIXME
     p = tag['pitch'] * PI / 180
