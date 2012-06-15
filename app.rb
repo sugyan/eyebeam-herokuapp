@@ -192,7 +192,7 @@ def draw_beam (img, tags)
     logger.info "roll : #{ tag['roll']  } (#{ r })"
     logger.info "pitch: #{ tag['pitch'] } (#{ p })"
     logger.info "yaw  : #{ tag['yaw']   } (#{ y })"
-    c = (p >= 0 ? 90 : -90) + (atan2(sin(p), sin(y / 3)) / PI * 180 + (p >= 0 ? -90 : 90)) / 3
+    c = (p >= 0 ? 90 : -90) + (atan2(sin(p), sin(y / 2)) / PI * 180 + (p >= 0 ? -90 : 90)) / 2
     cangle = c - tag['roll']
     openness = (1 - sin(p.abs)) ** 3 * (1 - sin(y.abs)) ** 3
     logger.info "cangle: #{ cangle }"
