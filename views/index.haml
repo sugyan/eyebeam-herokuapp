@@ -1,24 +1,41 @@
-%h1 目からビーム画像ジェネレータ
+%h1 目からビーム画像ジェネレーター
 
 %h2 説明
 %p
-  %a{:href => "http://kaolabo.com/webapi", :target => "_blank"} 顔ラボ 顔検出WebAPI
+  %a{:href => "http://developers.face.com/", :target => "_blank"} face.com API (beta)
   を使って画像から顔、目を検出し、自動でビームを合成した画像を生成します。
 %p
-  顔を検出できなかったら何もしません。あとAPIの利用回数制限により顔認識が成功しないことがあるようです。ご了承ください。
+  %img{:src => "/img/sample_orig.jpg"}
+  %i.icon-arrow-right
+  %img{:src => "/img/sample_beam.jpg"}
+%p
+  顔を検出できなかったら何もしません。
 %h2 作る
+以下のいずれかの方法で画像を指定できます。
 %h3 ・画像URLを指定して作る
-.submit_form
+.submit_form.well
   %form.form-inline{:action => "/url", :method => "POST"}
     %input.input-xxlarge{:type => "text", :name => "url", :placeholder => "画像のURLを入力してください"}
     %input.btn{:type => "submit", :value => "決定"}
 %h3 ・画像ファイルをアップロードして作る
-.submit_form
+.submit_form.well
   %p 画像を選んでください。
   %form.form-inline{:action => "/upload", :method => "POST", :enctype => "multipart/form-data"}
     %input.input{:type => "file", :name => "image"}
     %input.btn{:type => "submit", :value => "送信"}
-%h3 ・Twitterアイコンから作る
-.submit_form
-  %a{:href => "/auth/twitter"}
-    %img{:src => "/img/sign-in-with-twitter-l.png"}
+%h3 ・自分のアイコンから作る
+.submit_form.well
+  .authbutton
+    %a{:href => "/auth/twitter"}
+      %img{:src => "/lib/authbuttons/img/twitter.png"}
+      Twitter
+  .authbutton
+    %a{:href => "/auth/facebook"}
+      %img{:src => "/lib/authbuttons/img/facebook.png"}
+      Facebook
+%h2 最近作られた画像
+.row
+  - recents.compact.each do |sha1|
+    .span2.recent
+      %a{:href => "/result/#{ sha1 }"}
+        %img{:src => "/beam/#{ sha1 }.jpg"}
