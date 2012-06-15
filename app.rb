@@ -165,7 +165,7 @@ def draw_beam (img, tags)
           [img.columns, eye[1] - s * (img.columns - eye[0])]
         end
       }
-      # beam
+      # draw
       d.stroke_width(0)
       d.stroke_opacity(0)
       0.upto(4).each do |i|
@@ -185,8 +185,7 @@ def draw_beam (img, tags)
     d.fill_opacity(0.2)
     d.ellipse(leye[0], leye[1], width, width, 0, 360)
     d.ellipse(reye[0], reye[1], width, width, 0, 360)
-
-    # FIXME
+    # beam
     p = tag['pitch'] * PI / 180
     r = tag['roll']  * PI / 180
     y = tag['yaw']   * PI / 180
