@@ -10,5 +10,9 @@
       .image.beam
         %img{:src => "/beam/#{ params[:sha1] }.jpg"}
   .row.permalink
+    .caution
+      生成されたデータは一時的なものであり、ある程度時間が経過すると画像とこのページはアクセスできなくなります。
+      %br
+      残しておきたい場合は下記URLからダウンロードしてお使いください。
     ビーム画像URL: 
     %a{:href => "/beam/#{ params[:sha1] }.jpg"} http://#{ request.host }/beam/#{ params[:sha1] }.jpg

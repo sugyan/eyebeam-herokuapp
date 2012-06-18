@@ -33,6 +33,9 @@ h3 {
     margin: 20px 0;
     text-align: center;
 }
+#result .caution {
+    color: red;
+}
 
 footer .social-buttons .pull-left {
     margin-right: 10px;
