@@ -25,14 +25,17 @@
     %input.btn{:type => "submit", :value => "送信"}
 %h3 ・自分のアイコンから作る
 .submit_form.well
-  .authbutton
-    %a{:href => "/auth/twitter"}
-      %img{:src => "/lib/authbuttons/img/twitter.png"}
-      Twitter
-  .authbutton
-    %a{:href => "/auth/facebook"}
-      %img{:src => "/lib/authbuttons/img/facebook.png"}
-      Facebook
+  .row
+    .span3
+      .authbutton
+        %a{:href => "/auth/twitter"}
+          %img{:src => "/lib/authbuttons/img/twitter.png"}
+            Twitter
+    .span3
+      .authbutton
+        %a{:href => "/auth/facebook"}
+          %img{:src => "/lib/authbuttons/img/facebook.png"}
+            Facebook
 %h2 最近作られた画像
 .row
   - recents.compact.each do |sha1|
