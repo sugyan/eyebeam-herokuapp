@@ -9,6 +9,15 @@
     %link{:rel => "stylesheet", :type => "text/css", :href => "/lib/bootstrap/css/bootstrap.css"}
     %link{:rel => "stylesheet", :type => "text/css", :href => "/css/style.css"}
   %body
+    #fb-root
+    %script
+      (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=205076062948267";
+      fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
     .navbar.navbar-fixed-top
       .navbar-inner
         .container
@@ -22,6 +31,8 @@
       %footer
         .pull-right
           .social-buttons.pull-left
+            .facebook.pull-left
+              .fb-like{:"data-href" => "http://eyebeam.herokuapp.com/", :"data-send" => false, :"data-layout" => "button_count", :"data-width" => 100, :"data-show-faces" => false}
             .hatena.pull-left
               %a.hatena-bookmark-button{:href => "http://b.hatena.ne.jp/entry/http://eyebeam.herokuapp.com/", :"data-hatena-bookmark-title" => "目からビーム画像ジェネレーター", :"data-hatena-bookmark-layout" => "standard", :title => "このエントリーをはてなブックマークに追加"}
                 %img{:src => "http://b.st-hatena.com/images/entry-button/button-only.gif", :alt => "このエントリーをはてなブックマークに追加", :width => "20", :height => "20", :style => "border: none;"}
