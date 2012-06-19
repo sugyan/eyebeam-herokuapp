@@ -127,10 +127,12 @@ def submit (path)
     settings.cache.set("orig:#{ sha1 }", blob)
     if draw_beam(img, tags)
       settings.cache.set("beam:#{ sha1 }", img.to_blob{ self.format = 'JPG' })
-      5.downto(1).each do |i|
-        settings.cache.set("recent#{ i }", settings.cache.get("recent#{ i - 1 }"))
+      unless 0.upto(5).map{ |i| settings.cache.get("recent#{i}") }.include?(sha1)
+        5.downto(1).each do |i|
+          settings.cache.set("recent#{ i }", settings.cache.get("recent#{ i - 1 }"))
+        end
+        settings.cache.set("recent0", sha1)
       end
-      settings.cache.set("recent0", sha1)
       redirect "/result/#{ sha1 }"
     end
   end
