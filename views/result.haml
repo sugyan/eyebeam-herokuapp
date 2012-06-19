@@ -22,16 +22,31 @@
         %img{:src => "/lib/authbuttons/img/twitter.png"}
         Twitterに投稿する
     .span3
+      %a.share.facebook{:href => "#"}
+        %img{:src => "/lib/authbuttons/img/facebook.png"}
+        Facebookに投稿する
 .modal.hide.fade#tw-modal
   %form{:method => "POST", :action => "/share/twitter"}
     .modal-header
       %h3 Twitterに投稿する
     .modal-body
       .control-group
-        %textarea.tweet{:name => "text"}
+        %textarea.twitter{:name => "text"}
         投稿時にハッシュタグとURLが自動的に付加されます。
     .modal-footer
       %span.charcount 80
       %a.btn{:href => "#", :"data-dismiss" => "modal"} Cancel
       %input{:type => "hidden", :name => "sha1", :value => params[:sha1]}
       %input.btn.btn-primary#submit{:type => "submit", :value => "Tweet"}
+.modal.hide.fade#fb-modal
+  %form{:method => "POST", :action => "/share/facebook"}
+    .modal-header
+      %h3 Facebookに投稿する
+    .modal-body
+      .control-group
+        %textarea.facebook{:name => "text"}
+    .modal-footer
+      %span.charcount 300
+      %a.btn{:href => "#", :"data-dismiss" => "modal"} Cancel
+      %input{:type => "hidden", :name => "sha1", :value => params[:sha1]}
+      %input.btn.btn-primary.submit{:type => "submit", :value => "Post"}

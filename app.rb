@@ -8,12 +8,13 @@ require 'omniauth-facebook'
 require 'sinatra'
 require 'tempfile'
 require 'twitter'
+require 'fb_graph'
 require 'RMagick'
 include Math
 
 use OmniAuth::Builder do
   provider :twitter,  ENV['TWITTER_CONSUMER_KEY'], ENV['TWITTER_CONSUMER_SECRET']
-  provider :facebook, ENV['FACEBOOK_APP_ID'],      ENV['FACEBOOK_APP_SECRET']
+  provider :facebook, ENV['FACEBOOK_APP_ID'],      ENV['FACEBOOK_APP_SECRET'], :scope => 'user_photos,publish_stream'
 end
 
 enable :logging
@@ -86,7 +87,8 @@ get '/auth/twitter/callback' do
   logger.info auth.info
   begin
     if share = session.delete(:share)
-      sha1, text = share.split(/:/)
+      service, sha1, text = share.split(/:/)
+      error 500 if service != 'twitter'
       data = settings.cache.get("beam:#{ sha1 }")
       text ||= ''
       Twitter.configure do |config|
@@ -109,14 +111,28 @@ end
 get '/auth/facebook/callback' do
   auth = request.env['omniauth.auth']
   logger.info auth.info
-  if session[:share]
-  else
-    begin
+  begin
+    if share = session.delete(:share)
+      service, sha1, text = share.split(/:/)
+      error 500 if service != 'facebook'
+      data = settings.cache.get("beam:#{ sha1 }")
+      logger.info auth.credentials
+      file = Tempfile.new(sha1)
+      file.write(data)
+      me = FbGraph::User.me(auth.credentials.token)
+      photo = me.photo!(
+        :source  => File.new(file.path, 'rb'),
+        :message => text + ' http://eyebeam.herokuapp.com/',
+        :height  => 460,
+        :width   => 460,
+        )
+      redirect "https://www.facebook.com/photo.php?fbid=#{ photo.identifier }"
+    else
       submit(auth.info.image.gsub(/square/, 'large'))
-    rescue => e
-      logger.warn e.message
-      error 400
     end
+  rescue => e
+    logger.warn e.message
+    error 400
   end
 end
 
@@ -140,10 +156,11 @@ post '/upload' do
   end
 end
 
-post '/share/twitter' do
-  if params[:text].length <= 80
-    session[:share] = [params[:sha1], params[:text]].join(':')
-    redirect '/auth/twitter'
+post %r{/share/(twitter|facebook)} do
+  service = params[:captures].first
+  if params[:text].length <= (service == 'twitter' ? 80 : 300)
+    session[:share] = [service, params[:sha1], params[:text]].join(':')
+    redirect '/auth/' + service
   else
     logger.warn 'text too long'
     error 400
