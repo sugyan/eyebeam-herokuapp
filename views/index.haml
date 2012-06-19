@@ -27,15 +27,13 @@
 .submit_form.well
   .row
     .span3
-      .authbutton
-        %a{:href => "/auth/twitter"}
-          %img{:src => "/lib/authbuttons/img/twitter.png"}
-            Twitter
+      %a{:href => "/auth/twitter"}
+        %img{:src => "/lib/authbuttons/img/twitter.png"}
+          Twitter
     .span3
-      .authbutton
-        %a{:href => "/auth/facebook"}
-          %img{:src => "/lib/authbuttons/img/facebook.png"}
-            Facebook
+      %a{:href => "/auth/facebook"}
+        %img{:src => "/lib/authbuttons/img/facebook.png"}
+          Facebook
 %h2 最近作られた画像
 .row
   - recents.compact.each do |sha1|

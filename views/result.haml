@@ -12,7 +12,26 @@
   .row.permalink
     .caution
       生成されたデータは一時的なものであり、ある程度時間が経過すると画像とこのページはアクセスできなくなります。
-      %br
-      残しておきたい場合は下記URLからダウンロードしてお使いください。
     ビーム画像URL: 
     %a{:href => "/beam/#{ params[:sha1] }.jpg"} http://#{ request.host }/beam/#{ params[:sha1] }.jpg
+%h2 投稿する
+%form.submit_form.well
+  .row
+    .span3
+      %a.share.twitter{:href => "#"}
+        %img{:src => "/lib/authbuttons/img/twitter.png"}
+        Twitterに投稿する
+    .span3
+.modal.hide.fade#tw-modal
+  %form{:method => "POST", :action => "/share/twitter"}
+    .modal-header
+      %h3 Twitterに投稿する
+    .modal-body
+      .control-group
+        %textarea.tweet{:name => "text"}
+        投稿時にハッシュタグとURLが自動的に付加されます。
+    .modal-footer
+      %span.charcount 80
+      %a.btn{:href => "#", :"data-dismiss" => "modal"} Cancel
+      %input{:type => "hidden", :name => "sha1", :value => params[:sha1]}
+      %input.btn.btn-primary#submit{:type => "submit", :value => "Tweet"}

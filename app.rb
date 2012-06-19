@@ -7,6 +7,7 @@ require 'omniauth-twitter'
 require 'omniauth-facebook'
 require 'sinatra'
 require 'tempfile'
+require 'twitter'
 require 'RMagick'
 include Math
 
@@ -25,15 +26,29 @@ set :cache, Dalli::Client.new(ENV['MEMCACHE_SERVERS'],
 set :haml, :format      => :html5
 set :haml, :escape_html => true
 
+Twitter.configure do |config|
+  config.consumer_key    = ENV['TWITTER_CONSUMER_KEY']
+  config.consumer_secret = ENV['TWITTER_CONSUMER_SECRET']
+end
+
 error 400 do
   haml :error, :locals => { :code => 400, :message => 'Bad Request' }
+end
+
+error 401 do
+  haml :error, :locals => { :code => 400, :message => 'Unauthorized' }
 end
 
 error 404 do
   haml :error, :locals => { :code => 404, :message => 'Not Found' }
 end
 
+error 500 do
+  haml :error, :locals => { :code => 500, :message => 'Internal Server Error' }
+end
+
 get '/' do
+  session.delete(:share)
   recents = 0.upto(5).map do |i|
     if sha1 = settings.cache.get("recent#{ i }")
       sha1 if settings.cache.get("beam:#{ sha1 }")
@@ -51,18 +66,18 @@ get '/result/:sha1' do
   if settings.cache.get("orig:#{ sha1 }") && settings.cache.get("beam:#{ sha1 }")
     haml :result
   else
-    error 404, 'Not Found'
+    error 404
   end
 end
 
 get '/:kind/:path' do
   kind = params[:kind].match(/^(orig|beam)$/)
   sha1 = params[:path].match(/(\w+).jpg/)
-  if kind && sha1 && (data = settings.cache.get("#{ kind }:#{ sha1[1] }"))
+  if kind && sha1 && (data = settings.cache.get("#{ kind[1] }:#{ sha1[1] }"))
     content_type 'image/jpeg'
     data
   else
-    error 404, 'Not Found'
+    error 404
   end
 end
 
@@ -70,21 +85,39 @@ get '/auth/twitter/callback' do
   auth = request.env['omniauth.auth']
   logger.info auth.info
   begin
-    submit(auth.info.image)
+    if share = session.delete(:share)
+      sha1, text = share.split(/:/)
+      data = settings.cache.get("beam:#{ sha1 }")
+      Twitter.configure do |config|
+        config.oauth_token        = auth.credentials.token
+        config.oauth_token_secret = auth.credentials.secret
+      end
+      text += ' http://t.co/psYDKk07 #eyebeam'
+      puts text
+      puts text.length
+      tweet = Twitter.update_with_media(text, {'io' => StringIO.new(data), 'type' => 'jpg'})
+      logger.info "tweet from @#{ tweet.from_user }: #{ tweet.text }"
+      redirect "https://twitter.com/#{ tweet.from_user }/status/#{ tweet.id }"
+    else
+      submit(auth.info.image)
+    end
   rescue => e
     logger.warn e.message
-    error 400, 'Bad Request'
+    error 500
   end
 end
 
 get '/auth/facebook/callback' do
   auth = request.env['omniauth.auth']
   logger.info auth.info
-  begin
-    submit(auth.info.image.gsub(/square/, 'large'))
-  rescue => e
-    logger.warn e.message
-    error 400, 'Bad Request'
+  if session[:share]
+  else
+    begin
+      submit(auth.info.image.gsub(/square/, 'large'))
+    rescue => e
+      logger.warn e.message
+      error 400
+    end
   end
 end
 
@@ -94,7 +127,7 @@ post '/url' do
     submit(params[:url])
   rescue => e
     logger.warn e.message
-    error 400, 'Bad Request'
+    error 400
   end
 end
 
@@ -104,7 +137,18 @@ post '/upload' do
     submit(params[:image][:tempfile].path)
   rescue => e
     logger.warn e.message
-    error 400, 'Bad Request'
+    error 400
+  end
+end
+
+post '/share/twitter' do
+  p params[:text].length
+  if params[:text].length <= 80
+    session[:share] = [params[:sha1], params[:text]].join(':')
+    redirect '/auth/twitter'
+  else
+    logger.warn 'text too long'
+    error 400
   end
 end
 

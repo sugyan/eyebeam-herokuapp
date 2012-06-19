@@ -37,6 +37,14 @@ h3 {
     color: red;
 }
 
+.modal textarea {
+    width: 520px;
+    height: 56px;
+}
+.modal .charcount {
+    margin-right: 5px;
+}
+
 footer .social-buttons .pull-left {
     margin-right: 10px;
     height: 40px;
