@@ -88,13 +88,12 @@ get '/auth/twitter/callback' do
     if share = session.delete(:share)
       sha1, text = share.split(/:/)
       data = settings.cache.get("beam:#{ sha1 }")
+      text ||= ''
       Twitter.configure do |config|
         config.oauth_token        = auth.credentials.token
         config.oauth_token_secret = auth.credentials.secret
       end
       text += ' http://t.co/psYDKk07 #eyebeam'
-      puts text
-      puts text.length
       tweet = Twitter.update_with_media(text, {'io' => StringIO.new(data), 'type' => 'jpg'})
       logger.info "tweet from @#{ tweet.from_user }: #{ tweet.text }"
       redirect "https://twitter.com/#{ tweet.from_user }/status/#{ tweet.id }"
@@ -142,7 +141,6 @@ post '/upload' do
 end
 
 post '/share/twitter' do
-  p params[:text].length
   if params[:text].length <= 80
     session[:share] = [params[:sha1], params[:text]].join(':')
     redirect '/auth/twitter'
